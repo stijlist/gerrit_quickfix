@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -119,4 +120,29 @@ func TestParseComments(t *testing.T) {
 	if diff := cmp.Diff(want, parseComments(commentsBody)); diff != "" {
 		t.Fatalf("parseComments mismatch -want +got: %s", diff)
 	}
+}
+
+func TestPrintComments(t *testing.T) {
+	t.Run("standalone", func(t *testing.T) {
+		comments := comments{
+			"garnet/go/src/fidlext/fuchsia/hardware/ethernet/ethernet_fake.go": {
+				comment{
+					Author: author{
+						Name:  "Tamir Duberstein",
+						Email: "tamird@google.com",
+					},
+					Id:       "f8a5d0f8_abfa419c",
+					Patchset: 1,
+					Line:     47,
+					Message:  "clientTxFifo, deviceTxFifo will remain unclosed if this fails.",
+				},
+			},
+		}
+		var b strings.Builder
+		printComments(&b, comments)
+		want := "garnet/go/src/fidlext/fuchsia/hardware/ethernet/ethernet_fake.go:47\n\ttamird@google.com: clientTxFifo, deviceTxFifo will remain unclosed if this fails."
+		if diff := cmp.Diff(want, b.String()); diff != "" {
+			t.Fatalf("printComments mismatch (-want +got): %s", diff)
+		}
+	})
 }
