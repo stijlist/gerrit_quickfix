@@ -59,7 +59,7 @@ func parseChangeId(git []byte) string {
 	return string(regexp.MustCompile("Change-Id: ([[:alnum:]]+)").FindSubmatch(git)[1])
 }
 
-const prefix = "\n)]}'"
+const prefix = ")]}'"
 
 func skipPrefix(r io.Reader, p string) (io.Reader, error) {
 	discard := make([]byte, len(p))
