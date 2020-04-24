@@ -140,7 +140,42 @@ func TestPrintComments(t *testing.T) {
 		}
 		var b strings.Builder
 		printComments(&b, comments)
-		want := "garnet/go/src/fidlext/fuchsia/hardware/ethernet/ethernet_fake.go:47\n\ttamird@google.com: clientTxFifo, deviceTxFifo will remain unclosed if this fails."
+		want := "garnet/go/src/fidlext/fuchsia/hardware/ethernet/ethernet_fake.go:47\n\ttamird@google.com: clientTxFifo, deviceTxFifo will remain unclosed if this fails.\n"
+		if diff := cmp.Diff(want, b.String()); diff != "" {
+			t.Fatalf("printComments mismatch (-want +got): %s", diff)
+		}
+	})
+	t.Run("multiple", func(t *testing.T) {
+		comments :=
+			comments{
+				"garnet/go/src/fidlext/fuchsia/hardware/ethernet/ethernet_fake.go": {
+					comment{
+						Author: author{
+							Name:  "Tamir Duberstein",
+							Email: "tamird@google.com",
+						},
+						Id:       "f8a5d0f8_abfa419c",
+						Patchset: 1,
+						Line:     47,
+						Message:  "clientTxFifo, deviceTxFifo will remain unclosed if this fails.",
+					},
+					comment{
+						Author: author{
+							Name:  "Bert Muthalaly",
+							Email: "stijlist@google.com",
+						},
+						Id:      "19ec82ab_d83cfc82",
+						ReplyTo: "f8a5d0f8_abfa419c",
+
+						Patchset: 1,
+						Line:     47,
+						Message:  "Done",
+					},
+				},
+			}
+		var b strings.Builder
+		printComments(&b, comments)
+		want := "garnet/go/src/fidlext/fuchsia/hardware/ethernet/ethernet_fake.go:47\n\ttamird@google.com: clientTxFifo, deviceTxFifo will remain unclosed if this fails.\n\tstijlist@google.com: Done\n"
 		if diff := cmp.Diff(want, b.String()); diff != "" {
 			t.Fatalf("printComments mismatch (-want +got): %s", diff)
 		}

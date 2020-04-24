@@ -110,7 +110,7 @@ func printComments(w io.Writer, comments comments) {
 				fmt.Fprintf(w, "%s:%d\n", file, c.Line)
 				currentLine = c.Line
 			}
-			fmt.Fprintf(w, "\t%s: %s", c.Author.Email, c.Message)
+			fmt.Fprintf(w, "\t%s: %s\n", c.Author.Email, c.Message)
 		}
 	}
 }
