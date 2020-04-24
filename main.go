@@ -21,15 +21,15 @@ type change struct {
 }
 
 type author struct {
-	name  string
-	email string
+	Name  string
+	Email string
 }
 
 type comment struct {
-	author   author
-	patchset int
-	line     int
-	message  string
+	Author   author
+	Patchset int `json:"patch_set"`
+	Line     int
+	Message  string
 }
 
 // Keyed by filename.
@@ -89,6 +89,10 @@ func parseChange(r io.Reader) change {
 }
 
 func parseComments(r io.Reader) comments {
+	r, err := skipPrefix(r, prefix)
+	if err != nil {
+		panic(err)
+	}
 	var comments comments
 	if err := json.NewDecoder(r).Decode(&comments); err != nil {
 		panic("couldn't decode JSON: " + err.Error())
@@ -100,11 +104,11 @@ func printComments(w io.Writer, comments comments) {
 	for file, comments := range comments {
 		currentLine := -1
 		for _, c := range comments {
-			if c.line != currentLine {
-				fmt.Fprintf(w, "%s:%d\n", file, c.line)
-				currentLine = c.line
+			if c.Line != currentLine {
+				fmt.Fprintf(w, "%s:%d\n", file, c.Line)
+				currentLine = c.Line
 			}
-			fmt.Fprintf(w, "\t%s: %s", c.author.email, c.message)
+			fmt.Fprintf(w, "\t%s: %s", c.Author.Email, c.Message)
 		}
 	}
 }
