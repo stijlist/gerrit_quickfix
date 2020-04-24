@@ -27,7 +27,9 @@ type author struct {
 
 type comment struct {
 	Author   author
-	Patchset int `json:"patch_set"`
+	Id       string
+	ReplyTo  string `json:"in_reply_to"`
+	Patchset int    `json:"patch_set"`
 	Line     int
 	Message  string
 }
