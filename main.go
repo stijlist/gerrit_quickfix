@@ -46,7 +46,7 @@ func main() {
 		panic("couldn't invoke git show: " + err.Error())
 	}
 	changeID := parseChangeId(out)
-	// r := http.Get(fmt.Sprintf(changePattern, changeID))
+	// r, err := http.Get(fmt.Sprintf(changePattern, changeID))
 	// change := parseChange(r.Body)
 	r, err := http.Get(fmt.Sprintf(commentsPattern, changeID))
 	if err != nil {
@@ -113,4 +113,30 @@ func printComments(w io.Writer, comments comments) {
 			fmt.Fprintf(w, "\t%s: %s\n", c.Author.Email, c.Message)
 		}
 	}
+}
+
+func thread(comments []comment) map[string][]comment {
+	// youngest child id -> append(child, parents...)
+	threads := make(map[string][]comment)
+	waiting := make(map[string]comment)
+	for _, c := range comments {
+		if c.ReplyTo != "" {
+			if t, ok := threads[c.ReplyTo]; ok {
+				threads[c.Id] = append([]comment{c}, t...)
+				delete(threads, c.ReplyTo)
+			} else {
+				waiting[c.ReplyTo] = c
+			}
+		} else {
+			threads[c.Id] = []comment{c}
+		}
+		if w, ok := waiting[c.Id]; ok {
+			delete(waiting, c.Id)
+			if t, ok := threads[w.ReplyTo]; ok {
+				threads[w.Id] = append([]comment{w}, t...)
+				delete(threads, w.ReplyTo)
+			}
+		}
+	}
+	return threads
 }
