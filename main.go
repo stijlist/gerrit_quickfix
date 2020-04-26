@@ -115,28 +115,26 @@ func printComments(w io.Writer, comments comments) {
 	}
 }
 
-func thread(comments []comment) map[string][]comment {
-	// youngest child id -> append(child, parents...)
-	threads := make(map[string][]comment)
-	waiting := make(map[string]comment)
+// toposort sorts comments into threads of replies, preserving
+// the order of roots, where a root is a comment that isn't
+// replying to anything.
+func toposort(comments []comment) []comment {
+	// assumptions: we'll see every id as an Id once and as a ReplyTo at most once.
+	roots := []comment{}
+	edges := make(map[string]comment)
 	for _, c := range comments {
 		if c.ReplyTo != "" {
-			if t, ok := threads[c.ReplyTo]; ok {
-				threads[c.Id] = append([]comment{c}, t...)
-				delete(threads, c.ReplyTo)
-			} else {
-				waiting[c.ReplyTo] = c
-			}
+			edges[c.ReplyTo] = c
 		} else {
-			threads[c.Id] = []comment{c}
-		}
-		if w, ok := waiting[c.Id]; ok {
-			delete(waiting, c.Id)
-			if t, ok := threads[w.ReplyTo]; ok {
-				threads[w.Id] = append([]comment{w}, t...)
-				delete(threads, w.ReplyTo)
-			}
+			roots = append(roots, c)
 		}
 	}
-	return threads
+	out := []comment{}
+	for _, root := range roots {
+		out = append(out, root)
+		for next, ok := edges[root.Id]; ok; next, ok = edges[next.Id] {
+			out = append(out, next)
+		}
+	}
+	return out
 }

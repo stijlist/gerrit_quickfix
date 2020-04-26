@@ -124,58 +124,48 @@ func TestParseComments(t *testing.T) {
 
 func TestThreadComments(t *testing.T) {
 	t.Run("no threads", func(t *testing.T) {
-		want := map[string][]comment{
-			"abc": []comment{
-				comment{Id: "abc"},
-			},
-			"def": []comment{
-				comment{Id: "def"},
-			},
+		want := []comment{
+			comment{Id: "abc"},
+			comment{Id: "def"},
 		}
-		if diff := cmp.Diff(want, thread([]comment{
+		if diff := cmp.Diff(want, toposort([]comment{
 			comment{Id: "abc"}, comment{Id: "def"},
 		})); diff != "" {
 			t.Fatalf("thread mismatch (-want +got): %s", diff)
 		}
 	})
 	t.Run("find child before parent", func(t *testing.T) {
-		want := map[string][]comment{
-			"abc": []comment{
-				comment{Id: "abc", ReplyTo: "def"},
-				comment{Id: "def"},
-			},
+		want := []comment{
+			comment{Id: "abc"},
+			comment{Id: "def", ReplyTo: "abc"},
 		}
-		if diff := cmp.Diff(want, thread([]comment{
-			comment{Id: "abc", ReplyTo: "def"}, comment{Id: "def"},
+		if diff := cmp.Diff(want, toposort([]comment{
+			comment{Id: "def", ReplyTo: "abc"}, comment{Id: "abc"},
 		})); diff != "" {
 			t.Fatalf("thread mismatch (-want +got): %s", diff)
 		}
 	})
 	t.Run("find parent before child", func(t *testing.T) {
-		want := map[string][]comment{
-			"abc": []comment{
-				comment{Id: "abc", ReplyTo: "def"},
-				comment{Id: "def"},
-			},
+		want := []comment{
+			comment{Id: "abc"},
+			comment{Id: "def", ReplyTo: "abc"},
 		}
-		if diff := cmp.Diff(want, thread([]comment{
-			comment{Id: "def"}, comment{Id: "abc", ReplyTo: "def"},
+		if diff := cmp.Diff(want, toposort([]comment{
+			comment{Id: "abc"}, comment{Id: "def", ReplyTo: "abc"},
 		})); diff != "" {
 			t.Fatalf("thread mismatch (-want +got): %s", diff)
 		}
 	})
 	t.Run("find grandparent, child, parent", func(t *testing.T) {
-		want := map[string][]comment{
-			"abc": []comment{
-				comment{Id: "abc", ReplyTo: "def"},
-				comment{Id: "def", ReplyTo: "ghi"},
-				comment{Id: "ghi"},
-			},
+		want := []comment{
+			comment{Id: "abc"},
+			comment{Id: "def", ReplyTo: "abc"},
+			comment{Id: "ghi", ReplyTo: "def"},
 		}
-		if diff := cmp.Diff(want, thread([]comment{
-			comment{Id: "ghi"},
-			comment{Id: "abc", ReplyTo: "def"},
-			comment{Id: "def", ReplyTo: "ghi"},
+		if diff := cmp.Diff(want, toposort([]comment{
+			comment{Id: "abc"},
+			comment{Id: "ghi", ReplyTo: "def"},
+			comment{Id: "def", ReplyTo: "abc"},
 		})); diff != "" {
 			t.Fatalf("thread mismatch (-want +got): %s", diff)
 		}
