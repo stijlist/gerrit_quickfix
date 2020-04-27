@@ -38,7 +38,7 @@ type comment struct {
 type comments map[string][]comment
 
 const changePattern = "https://fuchsia-review.googlesource.com/changes/fuchsia~master~%s?o=CURRENT_REVISION&o=CURRENT_COMMIT"
-const commentsPattern = "https://fuchsia-review.googlesource.com/chnges/fuchsia~master~%s/comments"
+const commentsPattern = "https://fuchsia-review.googlesource.com/changes/fuchsia~master~%s/comments"
 
 func main() {
 	out, err := exec.Command("git show HEAD").Output()
