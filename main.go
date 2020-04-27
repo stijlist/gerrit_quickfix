@@ -52,6 +52,10 @@ func main() {
 	if err != nil {
 		panic("couldn't get comments endpoint: " + err.Error())
 	}
+	defer r.Body.Close()
+	if r.StatusCode != http.StatusOK {
+		panic("unexpected status: " + http.StatusText(r.StatusCode))
+	}
 	comments := parseComments(r.Body)
 
 	printComments(os.Stdout, comments)
