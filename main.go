@@ -41,7 +41,7 @@ const changePattern = "https://fuchsia-review.googlesource.com/changes/fuchsia~m
 const commentsPattern = "https://fuchsia-review.googlesource.com/changes/fuchsia~master~%s/comments"
 
 func main() {
-	out, err := exec.Command("git show HEAD").Output()
+	out, err := exec.Command("git", "show", "HEAD").Output()
 	if err != nil {
 		panic("couldn't invoke git show: " + err.Error())
 	}
