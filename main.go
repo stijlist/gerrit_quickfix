@@ -46,6 +46,9 @@ func main() {
 		panic("couldn't invoke git show: " + err.Error())
 	}
 	changeID := parseChangeId(out)
+	// TODO: use change to map patchset # -> commit hash
+	// TODO: keep only comments from old patchsets that still apply to the same
+	// file/line
 	// r, err := http.Get(fmt.Sprintf(changePattern, changeID))
 	// change := parseChange(r.Body)
 	r, err := http.Get(fmt.Sprintf(commentsPattern, changeID))
