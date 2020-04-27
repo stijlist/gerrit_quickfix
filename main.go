@@ -111,7 +111,10 @@ func printComments(w io.Writer, comments comments) {
 		currentLine := -1
 		for _, c := range comments {
 			if c.Line != currentLine {
-				fmt.Fprintf(w, "%s:%d\n", file, c.Line)
+				// The output format here should match the "generic C compiler"
+				// errorformat for Vim quickfix. :help errorformat in Vim for more
+				// information.
+				fmt.Fprintf(w, "%s:%d: \n", file, c.Line)
 				currentLine = c.Line
 			}
 			fmt.Fprintf(w, "\t%s: %s\n", c.Author.Email, c.Message)

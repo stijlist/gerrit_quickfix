@@ -190,7 +190,7 @@ func TestPrintComments(t *testing.T) {
 		}
 		var b strings.Builder
 		printComments(&b, comments)
-		want := "garnet/go/src/fidlext/fuchsia/hardware/ethernet/ethernet_fake.go:47\n\ttamird@google.com: clientTxFifo, deviceTxFifo will remain unclosed if this fails.\n"
+		want := "garnet/go/src/fidlext/fuchsia/hardware/ethernet/ethernet_fake.go:47: \n\ttamird@google.com: clientTxFifo, deviceTxFifo will remain unclosed if this fails.\n"
 		if diff := cmp.Diff(want, b.String()); diff != "" {
 			t.Fatalf("printComments mismatch (-want +got): %s", diff)
 		}
@@ -225,7 +225,7 @@ func TestPrintComments(t *testing.T) {
 			}
 		var b strings.Builder
 		printComments(&b, comments)
-		want := "garnet/go/src/fidlext/fuchsia/hardware/ethernet/ethernet_fake.go:47\n\ttamird@google.com: clientTxFifo, deviceTxFifo will remain unclosed if this fails.\n\tstijlist@google.com: Done\n"
+		want := "garnet/go/src/fidlext/fuchsia/hardware/ethernet/ethernet_fake.go:47: \n\ttamird@google.com: clientTxFifo, deviceTxFifo will remain unclosed if this fails.\n\tstijlist@google.com: Done\n"
 		if diff := cmp.Diff(want, b.String()); diff != "" {
 			t.Fatalf("printComments mismatch (-want +got): %s", diff)
 		}
