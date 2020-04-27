@@ -57,7 +57,9 @@ func main() {
 		panic("unexpected status: " + http.StatusText(r.StatusCode))
 	}
 	comments := parseComments(r.Body)
-
+	for file, cs := range comments {
+		comments[file] = toposort(cs)
+	}
 	printComments(os.Stdout, comments)
 }
 
