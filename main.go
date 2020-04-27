@@ -26,12 +26,13 @@ type author struct {
 }
 
 type comment struct {
-	Author   author
-	Id       string
-	ReplyTo  string `json:"in_reply_to"`
-	Patchset int    `json:"patch_set"`
-	Line     int
-	Message  string
+	Author     author
+	Id         string
+	ReplyTo    string `json:"in_reply_to"`
+	Patchset   int    `json:"patch_set"`
+	Line       int
+	Message    string
+	Unresolved bool
 }
 
 // Keyed by filename.
@@ -125,6 +126,36 @@ func printComments(w io.Writer, comments comments) {
 			fmt.Fprintf(w, "\t%s: %s\n", c.Author.Email, c.Message)
 		}
 	}
+}
+
+// filterResolved returns `comments` sans comments with at least one child that are resolved.
+// assumes the input has been toposorted.
+func filterResolved(comments []comment) ([]comment, error) {
+	out := []comment{}
+	var prev comment
+	var thread []comment
+	// root & resolved => skip
+	// root & unresolved => commit previous thread
+	// child & resolved => throw away thread
+	// child & unresolved => continue thread
+	for _, c := range comments {
+		if c.ReplyTo != "" && c.ReplyTo != prev.Id {
+			return nil, fmt.Errorf("unsorted input: got prev.Id = %s, want %s (in %+v)", prev.Id, c.ReplyTo, comments)
+		}
+		if c.ReplyTo == "" {
+			// We're starting a new thread; commit the previous one.
+			out = append(out, thread...)
+			thread = nil
+		}
+		thread = append(thread, c)
+		if !c.Unresolved {
+			// Throw away the previous thread without committing it.
+			thread = nil
+		}
+		prev = c
+	}
+	// if we're done, commit the last outstanding thread.
+	return append(out, thread...), nil
 }
 
 // toposort sorts comments into threads of replies, preserving

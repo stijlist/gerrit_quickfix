@@ -50,10 +50,11 @@ func TestParseComments(t *testing.T) {
 					Name:  "Tamir Duberstein",
 					Email: "tamird@google.com",
 				},
-				Id:       "f8a5d0f8_abfa419c",
-				Patchset: 1,
-				Line:     47,
-				Message:  "clientTxFifo, deviceTxFifo will remain unclosed if this fails.",
+				Id:         "f8a5d0f8_abfa419c",
+				Patchset:   1,
+				Line:       47,
+				Message:    "clientTxFifo, deviceTxFifo will remain unclosed if this fails.",
+				Unresolved: true,
 			},
 			comment{
 				Author: author{
@@ -74,11 +75,12 @@ func TestParseComments(t *testing.T) {
 					Name:  "Tamir Duberstein",
 					Email: "tamird@google.com",
 				},
-				Id:       "cc90824f_2c2a988a",
-				ReplyTo:  "",
-				Patchset: 1,
-				Line:     76,
-				Message:  "why don't you read it from it during the call to Close?",
+				Id:         "cc90824f_2c2a988a",
+				ReplyTo:    "",
+				Patchset:   1,
+				Line:       76,
+				Message:    "why don't you read it from it during the call to Close?",
+				Unresolved: true,
 			},
 			{
 				Author: author{
@@ -100,9 +102,10 @@ func TestParseComments(t *testing.T) {
 				Id:      "1acb9f5b_16bb4441",
 				ReplyTo: "b646d243_4b93b507",
 
-				Patchset: 1,
-				Line:     76,
-				Message:  "If there's no point, then let's phrase the comment in a way that indicates that. Instead it's worded as if making it unbuffered is desirable.",
+				Patchset:   1,
+				Line:       76,
+				Message:    "If there's no point, then let's phrase the comment in a way that indicates that. Instead it's worded as if making it unbuffered is desirable.",
+				Unresolved: true,
 			},
 			{
 				Author: author{
@@ -168,6 +171,112 @@ func TestThreadComments(t *testing.T) {
 			comment{Id: "def", ReplyTo: "abc"},
 		})); diff != "" {
 			t.Fatalf("thread mismatch (-want +got): %s", diff)
+		}
+	})
+}
+
+func TestFilterResolved(t *testing.T) {
+	t.Run("error on unsorted input", func(t *testing.T) {
+		if got, err := filterResolved([]comment{
+			comment{Id: "abc", ReplyTo: "xyz"},
+		}); err == nil {
+			t.Fatalf("got filterResolved(...) = (%+v, nil), want (nil, non-nil)", got)
+		}
+		if got, err := filterResolved([]comment{
+			comment{Id: "abc"},
+			comment{Id: "ghi", ReplyTo: "def"},
+			comment{Id: "def", ReplyTo: "abc"},
+		}); err == nil {
+			t.Fatalf("got filterResolved(...) = (%+v, nil), want (nil, non-nil)", got)
+		}
+	})
+	t.Run("no resolved threads", func(t *testing.T) {
+		want := []comment{
+			comment{Id: "abc", Unresolved: true},
+			comment{Id: "def", ReplyTo: "abc", Unresolved: true},
+		}
+		got, err := filterResolved([]comment{
+			comment{Id: "abc", Unresolved: true},
+			comment{Id: "def", ReplyTo: "abc", Unresolved: true},
+		})
+		if err != nil {
+			t.Fatalf("got filterResolved(...) = _, %s, want _, nil", err)
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Fatalf("unresolved mismatch (-want +got): %s", diff)
+		}
+	})
+	t.Run("one resolved thread", func(t *testing.T) {
+		want := []comment{}
+		got, err := filterResolved([]comment{
+			comment{Id: "abc", Unresolved: true},
+			comment{Id: "def", ReplyTo: "abc"},
+		})
+		if err != nil {
+			t.Fatalf("got filterResolved(...) = _, %s, want _, nil", err)
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Fatalf("unresolved mismatch (-want +got): %s", diff)
+		}
+	})
+	t.Run("resolved and unresolved threads", func(t *testing.T) {
+		want := []comment{
+			comment{Id: "ghi", Unresolved: true},
+			comment{Id: "hjk", ReplyTo: "ghi", Unresolved: true},
+		}
+		got, err := filterResolved([]comment{
+			comment{Id: "abc", Unresolved: true},
+			comment{Id: "def", ReplyTo: "abc"},
+			comment{Id: "ghi", Unresolved: true},
+			comment{Id: "hjk", ReplyTo: "ghi", Unresolved: true},
+		})
+		if err != nil {
+			t.Fatalf("got filterResolved(...) = _, %s, want _, nil", err)
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Fatalf("unresolved mismatch (-want +got): %s", diff)
+		}
+	})
+	t.Run("resolved roots among resolved and unresolved", func(t *testing.T) {
+		want := []comment{
+			comment{Id: "ghi", Unresolved: true},
+			comment{Id: "hjk", ReplyTo: "ghi", Unresolved: true},
+		}
+		got, err := filterResolved([]comment{
+			comment{Id: "uvw"},
+			comment{Id: "abc", Unresolved: true},
+			comment{Id: "def", ReplyTo: "abc"},
+			comment{Id: "xyz"},
+			comment{Id: "ghi", Unresolved: true},
+			comment{Id: "hjk", ReplyTo: "ghi", Unresolved: true},
+		})
+		if err != nil {
+			t.Fatalf("got filterResolved(...) = _, %s, want _, nil", err)
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Fatalf("unresolved mismatch (-want +got): %s", diff)
+		}
+	})
+	t.Run("unresolved roots among resolved and unresolved", func(t *testing.T) {
+		want := []comment{
+			comment{Id: "uvw", Unresolved: true},
+			comment{Id: "xyz", Unresolved: true},
+			comment{Id: "ghi", Unresolved: true},
+			comment{Id: "hjk", ReplyTo: "ghi", Unresolved: true},
+		}
+		got, err := filterResolved([]comment{
+			comment{Id: "uvw", Unresolved: true},
+			comment{Id: "abc", Unresolved: true},
+			comment{Id: "def", ReplyTo: "abc"},
+			comment{Id: "xyz", Unresolved: true},
+			comment{Id: "ghi", Unresolved: true},
+			comment{Id: "hjk", ReplyTo: "ghi", Unresolved: true},
+		})
+		if err != nil {
+			t.Fatalf("got filterResolved(...) = _, %s, want _, nil", err)
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Fatalf("unresolved mismatch (-want +got): %s", diff)
 		}
 	})
 }
