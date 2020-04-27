@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -42,6 +43,9 @@ const changePattern = "https://fuchsia-review.googlesource.com/changes/fuchsia~m
 const commentsPattern = "https://fuchsia-review.googlesource.com/changes/fuchsia~master~%s/comments"
 
 func main() {
+	var printResolved bool
+	flag.BoolVar(&printResolved, "print_resolved", false, "print comment threads that have been resolved")
+	flag.Parse()
 	out, err := exec.Command("git", "show", "HEAD").Output()
 	if err != nil {
 		panic("couldn't invoke git show: " + err.Error())
@@ -61,8 +65,15 @@ func main() {
 		panic("unexpected status: " + http.StatusText(r.StatusCode))
 	}
 	comments := parseComments(r.Body)
-	for file, cs := range comments {
-		comments[file] = toposort(cs)
+	for file := range comments {
+		comments[file] = toposort(comments[file])
+		if !printResolved {
+			filtered, err := filterResolved(comments[file])
+			if err != nil {
+				panic(err.Error())
+			}
+			comments[file] = filtered
+		}
 	}
 	printComments(os.Stdout, comments)
 }
